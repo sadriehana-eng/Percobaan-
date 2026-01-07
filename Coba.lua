@@ -1,4 +1,4 @@
--- Fish It - Auto Fish (Toggle ON/OFF)
+-- Fish It - Auto Fish FIXED (Toggle + Auto)
 -- Delta Compatible | Client-side only
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -10,7 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 -- CONFIG
 -- ======================
 local ENABLED = false
-local REEL_DELAY = 0.8 -- waktu aman sebelum auto tarik (detik)
+local REEL_DELAY = 0.8 -- 0.8 detik per siklus
 
 -- ======================
 -- UI TOGGLE
@@ -28,6 +28,11 @@ btn.TextScaled = true
 btn.Text = "AUTO FISH : OFF"
 btn.Parent = gui
 
+btn.MouseButton1Click:Connect(function()
+    ENABLED = not ENABLED
+    btn.Text = ENABLED and "AUTO FISH : ON" or "AUTO FISH : OFF"
+end)
+
 -- ======================
 -- REMOVE ANIMATION
 -- ======================
@@ -37,43 +42,49 @@ local function killAnimations()
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return end
     for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
-        pcall(function()
-            track:Stop()
-        end)
+        pcall(function() track:Stop() end)
     end
 end
 
 -- ======================
--- HANDLE TOOL ACTIVATED
+-- GET TOOL (PANCING)
 -- ======================
-local function setupTool(tool)
-    if not tool:IsA("Tool") then return end
-    tool.Activated:Connect(function()
-        if not ENABLED then return end
-
-        -- 1. matikan animasi
-        killAnimations()
-
-        -- 2. tunggu waktu aman
-        task.delay(REEL_DELAY, function()
-            -- 3. auto tarik
-            pcall(function()
-                tool:Activate()
-            end)
-        end)
-    end)
+local function getFishingTool()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    for _, tool in ipairs(char:GetChildren()) do
+        if tool:IsA("Tool") then
+            return tool
+        end
+    end
+    return nil
 end
+
+-- ======================
+-- MAIN LOOP
+-- ======================
+task.spawn(function()
+    while true do
+        if ENABLED then
+            local tool = getFishingTool()
+            if tool then
+                -- 1. matikan animasi
+                killAnimations()
+                -- 2. "lempar & tarik" otomatis
+                pcall(function() tool:Activate() end)
+            end
+            task.wait(REEL_DELAY)
+        else
+            task.wait(0.25)
+        end
+    end
+end)
 
 -- ======================
 -- WATCH CHARACTER
 -- ======================
 local function onCharacter(char)
-    for _, tool in ipairs(char:GetChildren()) do
-        setupTool(tool)
-    end
-    char.ChildAdded:Connect(function(child)
-        setupTool(child)
-    end)
+    -- nothing needed, loop cek tool setiap frame
 end
 
 if LocalPlayer.Character then
@@ -82,12 +93,4 @@ end
 
 LocalPlayer.CharacterAdded:Connect(onCharacter)
 
--- ======================
--- TOGGLE BUTTON
--- ======================
-btn.MouseButton1Click:Connect(function()
-    ENABLED = not ENABLED
-    btn.Text = ENABLED and "AUTO FISH : ON" or "AUTO FISH : OFF"
-end)
-
-print("[AutoFish] Toggle UI loaded. Click button to enable.")
+print("[AutoFish] Toggle UI loaded, auto fish loop active (0.8s)")
