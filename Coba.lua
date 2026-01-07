@@ -1,4 +1,4 @@
--- Fish It - Auto Fish FIXED (Toggle + Auto)
+-- Fish It - Auto Fish 0.8s Real
 -- Delta Compatible | Client-side only
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -10,33 +10,35 @@ local LocalPlayer = Players.LocalPlayer
 -- CONFIG
 -- ======================
 local ENABLED = false
-local REEL_DELAY = 0.8 -- 0.8 detik per siklus
+local TARGET_TIME = 0.8 -- 0.8 detik per ikan
 
 -- ======================
 -- UI TOGGLE
 -- ======================
 local gui = Instance.new("ScreenGui")
-gui.Name = "AutoFishToggleUI"
+gui.Name = "AutoFishRealUI"
 gui.Parent = game.CoreGui
 
 local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(0, 260, 0, 44)
-btn.Position = UDim2.new(0.5, -130, 0.15, 0)
+btn.Size = UDim2.new(0, 280, 0, 44)
+btn.Position = UDim2.new(0.5, -140, 0.15, 0)
 btn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 btn.TextColor3 = Color3.fromRGB(0, 255, 0)
 btn.TextScaled = true
-btn.Text = "AUTO FISH : OFF"
+btn.Text = "AUTO FISH : OFF (0.8s)"
 btn.Parent = gui
 
 btn.MouseButton1Click:Connect(function()
     ENABLED = not ENABLED
-    btn.Text = ENABLED and "AUTO FISH : ON" or "AUTO FISH : OFF"
+    btn.Text = ENABLED
+        and "AUTO FISH : ON (0.8s)"
+        or "AUTO FISH : OFF (0.8s)"
 end)
 
 -- ======================
--- REMOVE ANIMATION
+-- HELPERS
 -- ======================
-local function killAnimations()
+local function removeAnimations()
     local char = LocalPlayer.Character
     if not char then return end
     local hum = char:FindFirstChildOfClass("Humanoid")
@@ -46,9 +48,6 @@ local function killAnimations()
     end
 end
 
--- ======================
--- GET TOOL (PANCING)
--- ======================
 local function getFishingTool()
     local char = LocalPlayer.Character
     if not char then return nil end
@@ -61,19 +60,19 @@ local function getFishingTool()
 end
 
 -- ======================
--- MAIN LOOP
+-- AUTO FISH LOOP
 -- ======================
 task.spawn(function()
     while true do
         if ENABLED then
             local tool = getFishingTool()
             if tool then
-                -- 1. matikan animasi
-                killAnimations()
-                -- 2. "lempar & tarik" otomatis
+                -- hentikan animasi
+                removeAnimations()
+                -- gunakan Tool → lempar & tarik
                 pcall(function() tool:Activate() end)
             end
-            task.wait(REEL_DELAY)
+            task.wait(TARGET_TIME)
         else
             task.wait(0.25)
         end
@@ -84,7 +83,7 @@ end)
 -- WATCH CHARACTER
 -- ======================
 local function onCharacter(char)
-    -- nothing needed, loop cek tool setiap frame
+    -- nothing needed, loop cek Tool setiap frame
 end
 
 if LocalPlayer.Character then
@@ -93,4 +92,4 @@ end
 
 LocalPlayer.CharacterAdded:Connect(onCharacter)
 
-print("[AutoFish] Toggle UI loaded, auto fish loop active (0.8s)")
+print("[AutoFish] Toggle ON/OFF + 0.8s auto fish loaded")
