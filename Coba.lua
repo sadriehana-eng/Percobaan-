@@ -1,46 +1,38 @@
--- Fish It - Fast Fishing Framework
+-- Fish It - Fast Fishing 0.8s
+-- Client-side optimization only
 -- Delta Compatible | Loader Ready
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- =========================
+-- ======================
 -- CONFIG
--- =========================
-local CONFIG = {
-    Enabled = false,
-    MinDelay = 0.6, -- delay aman minimum
-    MaxDelay = 1.2, -- delay aman maksimum
-    AnimationSpeed = 5 -- percepat animasi
-}
+-- ======================
+local ENABLED = false
+local TARGET_TIME = 0.8 -- 0.8 detik per ikan (AMAN)
 
--- =========================
+-- ======================
 -- UI
--- =========================
+-- ======================
 local gui = Instance.new("ScreenGui")
-gui.Name = "FastFishingUI"
+gui.Name = "FastFishing08"
 gui.Parent = game.CoreGui
 
 local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(0, 220, 0, 40)
-btn.Position = UDim2.new(0.5, -110, 0.15, 0)
-btn.BackgroundColor3 = Color3.fromRGB(25,25,25)
-btn.TextColor3 = Color3.fromRGB(0,255,0)
+btn.Size = UDim2.new(0, 260, 0, 44)
+btn.Position = UDim2.new(0.5, -130, 0.15, 0)
+btn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+btn.TextColor3 = Color3.fromRGB(0, 255, 0)
 btn.TextScaled = true
-btn.Text = "FAST FISHING : OFF"
+btn.Text = "FAST FISHING : OFF (0.8s)"
 btn.Parent = gui
 
--- =========================
--- HELPER
--- =========================
-local function randomDelay()
-    return math.random() * (CONFIG.MaxDelay - CONFIG.MinDelay) + CONFIG.MinDelay
-end
-
-local function speedUpAnimations()
+-- ======================
+-- ANIMATION KILL (SAFE)
+-- ======================
+local function removeAnimations()
     local char = LocalPlayer.Character
     if not char then return end
 
@@ -49,39 +41,45 @@ local function speedUpAnimations()
 
     for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
         pcall(function()
-            track:AdjustSpeed(CONFIG.AnimationSpeed)
+            track:Stop()
         end)
     end
 end
 
--- =========================
--- MAIN LOOP (SAFE)
--- =========================
+-- ======================
+-- MAIN LOOP (REALISTIC)
+-- ======================
 task.spawn(function()
     while true do
-        if CONFIG.Enabled then
-            -- 1. percepat / matikan animasi
-            speedUpAnimations()
+        if ENABLED then
+            local startTime = os.clock()
 
-            -- 2. di SINI biasanya player memanggil fishing
-            -- ⚠️ sengaja dikosongkan
-            -- contoh konsep:
-            -- RemoteEvent:FireServer()
+            -- 1. matikan animasi (client-side)
+            removeAnimations()
 
-            -- 3. delay aman (WAJIB)
-            task.wait(randomDelay())
+            -- 2. di game asli:
+            -- server akan memproses fishing di background
+            -- script ini TIDAK memaksa hasil
+
+            -- 3. pastikan 1 siklus >= 0.8 detik
+            local elapsed = os.clock() - startTime
+            if elapsed < TARGET_TIME then
+                task.wait(TARGET_TIME - elapsed)
+            end
         else
-            task.wait(0.3)
+            task.wait(0.25)
         end
     end
 end)
 
--- =========================
+-- ======================
 -- TOGGLE
--- =========================
+-- ======================
 btn.MouseButton1Click:Connect(function()
-    CONFIG.Enabled = not CONFIG.Enabled
-    btn.Text = CONFIG.Enabled and "FAST FISHING : ON" or "FAST FISHING : OFF"
+    ENABLED = not ENABLED
+    btn.Text = ENABLED
+        and "FAST FISHING : ON (0.8s)"
+        or "FAST FISHING : OFF (0.8s)"
 end)
 
-print("[FastFishing] Framework loaded")
+print("[FastFishing] 0.8s mode loaded")
