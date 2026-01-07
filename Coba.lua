@@ -1,70 +1,87 @@
--- 🐟 Fish It | Luck Override + UI
--- All-in-One | Delta Executor Compatible
+-- Fish It - Fast Fishing Framework
+-- Delta Compatible | Loader Ready
 
-if not game:IsLoaded() then
-    game.Loaded:Wait()
-end
+if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local LP = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
 
--- ===== CONFIG =====
-local LUCK_MULTIPLIER = 2000000 -- 2.000.000%
-local ENABLED = true
--- ==================
+-- =========================
+-- CONFIG
+-- =========================
+local CONFIG = {
+    Enabled = false,
+    MinDelay = 0.6, -- delay aman minimum
+    MaxDelay = 1.2, -- delay aman maksimum
+    AnimationSpeed = 5 -- percepat animasi
+}
 
--- Cari Luck Value
-local function getLuck()
-    local stats = LP:FindFirstChild("leaderstats")
-    if not stats then return nil end
-    return stats:FindFirstChild("Luck")
+-- =========================
+-- UI
+-- =========================
+local gui = Instance.new("ScreenGui")
+gui.Name = "FastFishingUI"
+gui.Parent = game.CoreGui
+
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0, 220, 0, 40)
+btn.Position = UDim2.new(0.5, -110, 0.15, 0)
+btn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+btn.TextColor3 = Color3.fromRGB(0,255,0)
+btn.TextScaled = true
+btn.Text = "FAST FISHING : OFF"
+btn.Parent = gui
+
+-- =========================
+-- HELPER
+-- =========================
+local function randomDelay()
+    return math.random() * (CONFIG.MaxDelay - CONFIG.MinDelay) + CONFIG.MinDelay
 end
 
-local originalLuck = nil
+local function speedUpAnimations()
+    local char = LocalPlayer.Character
+    if not char then return end
 
--- Paksa luck tiap frame (biar terasa)
-RunService.Heartbeat:Connect(function()
-    if not ENABLED then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
 
-    local luck = getLuck()
-    if luck and luck:IsA("NumberValue") then
-        if not originalLuck then
-            originalLuck = luck.Value
+    for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
+        pcall(function()
+            track:AdjustSpeed(CONFIG.AnimationSpeed)
+        end)
+    end
+end
+
+-- =========================
+-- MAIN LOOP (SAFE)
+-- =========================
+task.spawn(function()
+    while true do
+        if CONFIG.Enabled then
+            -- 1. percepat / matikan animasi
+            speedUpAnimations()
+
+            -- 2. di SINI biasanya player memanggil fishing
+            -- ⚠️ sengaja dikosongkan
+            -- contoh konsep:
+            -- RemoteEvent:FireServer()
+
+            -- 3. delay aman (WAJIB)
+            task.wait(randomDelay())
+        else
+            task.wait(0.3)
         end
-
-        luck.Value = originalLuck * LUCK_MULTIPLIER
     end
 end)
 
--- ===== UI =====
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "LuckUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.CoreGui
-
-local Button = Instance.new("TextButton")
-Button.Size = UDim2.new(0, 160, 0, 45)
-Button.Position = UDim2.new(0.5, -80, 0.8, 0)
-Button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-Button.TextScaled = true
-Button.Font = Enum.Font.GothamBold
-Button.Text = "Luck : ON"
-Button.Parent = ScreenGui
-
-local uiState = true
-
-Button.MouseButton1Click:Connect(function()
-    uiState = not uiState
-    ENABLED = uiState
-
-    local luck = getLuck()
-    if luck and originalLuck then
-        if not uiState then
-            luck.Value = originalLuck
-        end
-    end
-
-    Button.Text = uiState and "Luck : ON" or "Luck : OFF"
+-- =========================
+-- TOGGLE
+-- =========================
+btn.MouseButton1Click:Connect(function()
+    CONFIG.Enabled = not CONFIG.Enabled
+    btn.Text = CONFIG.Enabled and "FAST FISHING : ON" or "FAST FISHING : OFF"
 end)
+
+print("[FastFishing] Framework loaded")
